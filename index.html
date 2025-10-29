@@ -1,786 +1,93 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>抽卡分析工具</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-    />
-    <style>
-      :root {
-        --primary-color: #8b5cf6;
-        --secondary-color: #a78bfa;
-        --dark-bg: #111827;
-        --darker-bg: #0d1323;
-        --card-bg: #1f2937;
-        --text-primary: #f9fafb;
-        --text-secondary: #d1d5db;
-        --success: #10b981;
-        --warning: #f59e0b;
-        --danger: #ef4444;
-      }
-
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-      }
-
-      body {
-        background-color: var(--dark-bg);
-        color: var(--text-primary);
-        min-height: 100vh;
-        display: flex;
-        flex-direction: column;
-        background-image: radial-gradient(
-          circle at 50% 50%,
-          rgba(76, 29, 149, 0.1) 0%,
-          rgba(17, 24, 39, 1) 90%
-        );
-      }
-
-      header {
-        padding: 2rem 1rem;
-        text-align: center;
-        background-color: var(--darker-bg);
-        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-      }
-
-      .logo-container {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 12px;
-        margin-bottom: 1rem;
-      }
-
-      .logo {
-        width: 50px;
-        height: 50px;
-        background: linear-gradient(135deg, var(--primary-color), #6d28d9);
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 24px;
-        color: white;
-      }
-
-      h1 {
-        font-size: 2.25rem;
-        background: linear-gradient(90deg, #8b5cf6, #ec4899);
-        -webkit-background-clip: text;
-        background-clip: text;
-        color: transparent;
-        margin-bottom: 0.5rem;
-      }
-
-      .subtitle {
-        color: var(--text-secondary);
-        max-width: 800px;
-        margin: 0 auto;
-        line-height: 1.6;
-      }
-
-      .container {
-        max-width: 1200px;
-        margin: 2rem auto;
-        padding: 0 1rem;
-        flex: 1;
-        width: 100%;
-      }
-
-      .input-section {
-        background-color: var(--darker-bg);
-        border-radius: 16px;
-        padding: 2rem;
-        margin-bottom: 2rem;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-        border: 1px solid rgba(255, 255, 255, 0.05);
-      }
-
-      .input-group {
-        max-width: 800px;
-        margin: 0 auto;
-        display: flex;
-        gap: 12px;
-      }
-
-      #gacha-url {
-        flex: 1;
-        padding: 15px 20px;
-        border-radius: 12px;
-        border: none;
-        background-color: rgba(255, 255, 255, 0.07);
-        color: var(--text-primary);
-        font-size: 1rem;
-        outline: none;
-        transition: all 0.3s ease;
-      }
-
-      #gacha-url:focus {
-        box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.3);
-        background-color: rgba(255, 255, 255, 0.1);
-      }
-
-      button {
-        background: linear-gradient(90deg, var(--primary-color), #7c3aed);
-        color: white;
-        border: none;
-        padding: 0 24px;
-        border-radius: 12px;
-        cursor: pointer;
-        font-weight: 600;
-        font-size: 1rem;
-        transition: all 0.3s ease;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      }
-
-      button:hover {
-        background: linear-gradient(90deg, #7c3aed, var(--primary-color));
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(139, 92, 246, 0.3);
-      }
-
-      .supported-games {
-        display: flex;
-        justify-content: center;
-        flex-wrap: wrap;
-        gap: 20px;
-        margin-top: 2rem;
-      }
-
-      .game-item {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 10px 16px;
-        border-radius: 12px;
-        background-color: rgba(139, 92, 246, 0.1);
-        border: 1px solid rgba(139, 92, 246, 0.3);
-        transition: all 0.3s ease;
-      }
-
-      .game-item:hover {
-        background-color: rgba(139, 92, 246, 0.15);
-        transform: translateY(-3px);
-      }
-
-      .game-logo {
-        width: 28px;
-        height: 28px;
-        background-color: rgba(255, 255, 255, 0.9);
-        border-radius: 6px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 14px;
-      }
-
-      .game-name {
-        font-weight: 600;
-        font-size: 14px;
-      }
-
-      .results-section {
-        display: none;
-      }
-
-      .tabs {
-        display: flex;
-        gap: 10px;
-        margin-bottom: 1.5rem;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        padding-bottom: 10px;
-      }
-
-      .tab {
-        padding: 10px 20px;
-        border-radius: 50px;
-        cursor: pointer;
-        font-weight: 600;
-        transition: all 0.3s ease;
-      }
-
-      .tab.active {
-        background-color: rgba(139, 92, 246, 0.2);
-        color: var(--primary-color);
-      }
-
-      .card-container {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-        gap: 20px;
-      }
-
-      .card {
-        background-color: var(--card-bg);
-        border-radius: 16px;
-        padding: 20px;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-        transition: transform 0.3s ease;
-      }
-
-      .card:hover {
-        transform: translateY(-5px);
-      }
-
-      .card-header {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        margin-bottom: 15px;
-        padding-bottom: 10px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-      }
-
-      .card-icon {
-        width: 40px;
-        height: 40px;
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 18px;
-      }
-
-      .card-title {
-        font-size: 18px;
-        font-weight: 600;
-      }
-
-      .chart-container {
-        height: 200px;
-        margin-top: 15px;
-      }
-
-      .stat-highlight {
-        font-size: 2rem;
-        font-weight: 700;
-        margin: 10px 0;
-        background: linear-gradient(90deg, var(--primary-color), #ec4899);
-        -webkit-background-clip: text;
-        background-clip: text;
-        color: transparent;
-      }
-
-      .item-list {
-        max-height: 250px;
-        overflow-y: auto;
-        margin-top: 10px;
-      }
-
-      .item {
-        display: flex;
-        align-items: center;
-        padding: 10px;
-        border-radius: 10px;
-        margin-bottom: 8px;
-        background-color: rgba(255, 255, 255, 0.05);
-        transition: all 0.3s ease;
-      }
-
-      .item:hover {
-        background-color: rgba(255, 255, 255, 0.08);
-      }
-
-      .item-avatar {
-        width: 40px;
-        height: 40px;
-        border-radius: 8px;
-        background-color: #3f3f46;
-        margin-right: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-
-      .item-details {
-        flex: 1;
-      }
-
-      .item-name {
-        font-weight: 500;
-        margin-bottom: 4px;
-      }
-
-      .item-rarity {
-        font-size: 0.85rem;
-        padding: 3px 8px;
-        border-radius: 100px;
-        display: inline-block;
-      }
-
-      .rarity-5 {
-        background-color: #fde047;
-        color: #713f12;
-      }
-      .rarity-4 {
-        background-color: #a78bfa;
-        color: white;
-      }
-      .rarity-3 {
-        background-color: #60a5fa;
-        color: white;
-      }
-
-      footer {
-        text-align: center;
-        padding: 2rem;
-        margin-top: 3rem;
-        color: var(--text-secondary);
-        font-size: 0.9rem;
-        border-top: 1px solid rgba(255, 255, 255, 0.05);
-      }
-
-      @media (max-width: 768px) {
-        .input-group {
-          flex-direction: column;
-        }
-
-        button {
-          padding: 15px 20px;
-          justify-content: center;
-        }
-
-        h1 {
-          font-size: 1.75rem;
-        }
-
-        .card-container {
-          grid-template-columns: 1fr;
-        }
-      }
-    </style>
-  </head>
-  <body>
-    <header>
-      <div class="logo-container">
-        <div class="logo">
-          <i class="fas fa-star"></i>
-        </div>
-        <div class="logo-text">GachaAnalyzer</div>
-      </div>
-      <h1>抽卡数据分析工具</h1>
-      <p class="subtitle">
-        输入游戏抽卡记录链接，获取详细的数据分析与抽卡报告。支持多种热门游戏抽卡记录分析。
-      </p>
-
-      <div class="container">
-        <div class="input-section">
-          <div class="input-group">
-            <input
-              type="url"
-              id="gacha-url"
-              placeholder="粘贴抽卡记录链接（支持B站、米游社等抽卡链接）"
-            />
-            <button id="analyze-btn">
-              <i class="fas fa-chart-bar"></i>
-              开始分析
-            </button>
-          </div>
-
-          <div class="supported-games">
-            <div class="game-item">
-              <div class="game-logo">
-                <i class="fas fa-bolt" style="color: #7d41ed"></i>
-              </div>
-              <div class="game-name">崩坏：星穹铁道</div>
-            </div>
-            <div class="game-item">
-              <div class="game-logo">
-                <i class="fas fa-anchor" style="color: #3c91e6"></i>
-              </div>
-              <div class="game-name">原神</div>
-            </div>
-            <div class="game-item">
-              <div class="game-logo">
-                <i class="fas fa-fist-raised" style="color: #db4437"></i>
-              </div>
-              <div class="game-name">明日方舟</div>
-            </div>
-            <div class="game-item">
-              <div class="game-logo">
-                <i class="fas fa-feather-alt" style="color: #0f9d58"></i>
-              </div>
-              <div class="game-name">重返未来1999</div>
-            </div>
-            <div class="game-item">
-              <div class="game-logo">
-                <i class="fas fa-dragon" style="color: #f4b400"></i>
-              </div>
-              <div class="game-name">崩坏3</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </header>
-
-    <div class="container">
-      <div id="results-section" class="results-section">
-        <div class="tabs">
-          <div class="tab active" data-tab="summary">概览</div>
-          <div class="tab" data-tab="characters">角色分析</div>
-          <div class="tab" data-tab="weapons">光锥分析</div>
-          <div class="tab" data-tab="history">抽卡记录</div>
-        </div>
-
-        <div class="card-container">
-          <!-- 数据概览卡片 -->
-          <div class="card">
-            <div class="card-header">
-              <div
-                class="card-icon"
-                style="
-                  background-color: rgba(139, 92, 246, 0.2);
-                  color: var(--primary-color);
-                "
-              >
-                <i class="fas fa-chart-pie"></i>
-              </div>
-              <div class="card-title">抽卡分布</div>
-            </div>
-            <canvas
-              id="gacha-distribution-chart"
-              class="chart-container"
-            ></canvas>
-          </div>
-
-          <div class="card">
-            <div class="card-header">
-              <div
-                class="card-icon"
-                style="
-                  background-color: rgba(16, 185, 129, 0.2);
-                  color: var(--success);
-                "
-              >
-                <i class="fas fa-tachometer-alt"></i>
-              </div>
-              <div class="card-title">抽卡概率</div>
-            </div>
-            <div class="stat-highlight">0.88%</div>
-            <div>五星角色平均出卡率</div>
-            <div class="stat-highlight">68.7</div>
-            <div>平均每次获取五星角色的抽数</div>
-            <div class="stat-highlight">23.4</div>
-            <div>平均每次获取四星角色的抽数</div>
-          </div>
-
-          <div class="card">
-            <div class="card-header">
-              <div
-                class="card-icon"
-                style="
-                  background-color: rgba(245, 158, 11, 0.2);
-                  color: var(--warning);
-                "
-              >
-                <i class="fas fa-history"></i>
-              </div>
-              <div class="card-title">统计概览</div>
-            </div>
-            <div class="stat-highlight">647</div>
-            <div>总抽卡次数</div>
-            <div class="stat-highlight">8</div>
-            <div>获得的五星角色数</div>
-            <div class="stat-highlight">32</div>
-            <div>获得的四星角色数</div>
-            <div class="stat-highlight">1.23%</div>
-            <div>五星角色占所有抽卡的比例</div>
-          </div>
-
-          <!-- 角色分析卡片 -->
-          <div class="card" data-tab-content="characters">
-            <div class="card-header">
-              <div
-                class="card-icon"
-                style="
-                  background-color: rgba(239, 68, 68, 0.2);
-                  color: var(--danger);
-                "
-              >
-                <i class="fas fa-user"></i>
-              </div>
-              <div class="card-title">角色获得情况</div>
-            </div>
-            <div class="item-list">
-              <div class="item">
-                <div class="item-avatar rarity-5">★</div>
-                <div class="item-details">
-                  <div class="item-name">镜流</div>
-                  <div class="item-rarity rarity-5">五星</div>
-                </div>
-                <div>第63抽</div>
-              </div>
-              <div class="item">
-                <div class="item-avatar rarity-5">★</div>
-                <div class="item-details">
-                  <div class="item-name">托帕 & 账账</div>
-                  <div class="item-rarity rarity-5">五星</div>
-                </div>
-                <div>第81抽</div>
-              </div>
-              <div class="item">
-                <div class="item-avatar rarity-4">★</div>
-                <div class="item-details">
-                  <div class="item-name">桂乃芬</div>
-                  <div class="item-rarity rarity-4">四星</div>
-                </div>
-                <div>第45抽</div>
-              </div>
-              <div class="item">
-                <div class="item-avatar rarity-5">★</div>
-                <div class="item-details">
-                  <div class="item-name">布洛妮娅</div>
-                  <div class="item-rarity rarity-5">五星</div>
-                </div>
-                <div>第78抽</div>
-              </div>
-              <div class="item">
-                <div class="item-avatar rarity-4">★</div>
-                <div class="item-details">
-                  <div class="item-name">卢卡</div>
-                  <div class="item-rarity rarity-4">四星</div>
-                </div>
-                <div>第13抽</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- 武器分析卡片 -->
-          <div class="card" data-tab-content="weapons">
-            <div class="card-header">
-              <div
-                class="card-icon"
-                style="
-                  background-color: rgba(59, 130, 246, 0.2);
-                  color: #3b82f6;
-                "
-              >
-                <i class="fas fa-gem"></i>
-              </div>
-              <div class="card-title">光锥获得情况</div>
-            </div>
-            <div class="item-list">
-              <div class="item">
-                <div class="item-avatar rarity-5">W</div>
-                <div class="item-details">
-                  <div class="item-name">此身为剑</div>
-                  <div class="item-rarity rarity-5">五星</div>
-                </div>
-                <div>第65抽</div>
-              </div>
-              <div class="item">
-                <div class="item-avatar rarity-4">W</div>
-                <div class="item-details">
-                  <div class="item-name">别让世界静下来</div>
-                  <div class="item-rarity rarity-4">四星</div>
-                </div>
-                <div>第28抽</div>
-              </div>
-              <div class="item">
-                <div class="item-avatar rarity-5">W</div>
-                <div class="item-details">
-                  <div class="item-name">记一位星神的陨落</div>
-                  <div class="item-rarity rarity-5">五星</div>
-                </div>
-                <div>第77抽</div>
-              </div>
-              <div class="item">
-                <div class="item-avatar rarity-4">W</div>
-                <div class="item-details">
-                  <div class="item-name">余生的第一天</div>
-                  <div class="item-rarity rarity-4">四星</div>
-                </div>
-                <div>第51抽</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- 抽卡历史卡片 -->
-          <div
-            class="card"
-            data-tab-content="history"
-            style="grid-column: span 2"
-          >
-            <div class="card-header">
-              <div
-                class="card-icon"
-                style="
-                  background-color: rgba(139, 92, 246, 0.2);
-                  color: var(--primary-color);
-                "
-              >
-                <i class="fas fa-list"></i>
-              </div>
-              <div class="card-title">最近20次抽卡记录</div>
-            </div>
-            <div class="item-list">
-              <div class="item">
-                <div class="item-avatar rarity-3">●</div>
-                <div class="item-details">
-                  <div class="item-name">旅行见闻</div>
-                  <div class="item-rarity">三星</div>
-                </div>
-                <div>第1抽</div>
-              </div>
-              <div class="item">
-                <div class="item-avatar rarity-3">●</div>
-                <div class="item-details">
-                  <div class="item-name">毁灭者的回响</div>
-                  <div class="item-rarity">三星</div>
-                </div>
-                <div>第2抽</div>
-              </div>
-              <div class="item">
-                <div class="item-avatar rarity-3">●</div>
-                <div class="item-details">
-                  <div class="item-name">命运从未公平</div>
-                  <div class="item-rarity">三星</div>
-                </div>
-                <div>第3抽</div>
-              </div>
-              <div class="item">
-                <div class="item-avatar rarity-4">★</div>
-                <div class="item-details">
-                  <div class="item-name">卢卡</div>
-                  <div class="item-rarity rarity-4">四星角色</div>
-                </div>
-                <div>第4抽</div>
-              </div>
-              <div class="item">
-                <div class="item-avatar rarity-3">●</div>
-                <div class="item-details">
-                  <div class="item-name">天外重声</div>
-                  <div class="item-rarity">三星</div>
-                </div>
-                <div>第5抽</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <footer>
-      <p>抽卡分析工具 &copy; 2023 GachaAnalyzer - 数据安全隐私保护</p>
-      <p>
-        免责声明：本工具仅用于游戏数据分析，不会存储用户的抽卡记录链接和隐私信息
-      </p>
-    </footer>
-
-    <script>
-      // 图表和数据模拟
-      document.addEventListener("DOMContentLoaded", function () {
-        // 初始化饼图
-        const ctx = document.getElementById("gacha-distribution-chart");
-        new Chart(ctx, {
-          type: "pie",
-          data: {
-            labels: [
-              "五星角色",
-              "五星光锥",
-              "四星角色",
-              "四星光锥",
-              "三星物品",
-            ],
-            datasets: [
-              {
-                data: [1.23, 1.54, 6.8, 8.34, 82.09],
-                backgroundColor: [
-                  "#FFD700",
-                  "#F59E0B",
-                  "#A78BFA",
-                  "#8B5CF6",
-                  "#6B7280",
-                ],
-              },
-            ],
-          },
-          options: {
-            responsive: true,
-            plugins: {
-              legend: {
-                position: "right",
-                labels: {
-                  color: "#D1D5DB",
-                },
-              },
-            },
-          },
-        });
-
-        // 模拟其他图表（如有需要）
-
-        // 绑定分析按钮事件
-        document
-          .getElementById("analyze-btn")
-          .addEventListener("click", function () {
-            const url = document.getElementById("gacha-url").value;
-
-            if (url) {
-              // 显示加载动画
-              const btn = this;
-              const originalHTML = btn.innerHTML;
-              btn.innerHTML =
-                '<i class="fas fa-spinner fa-spin"></i> 分析中...';
-              btn.disabled = true;
-
-              // 模拟API请求
-              setTimeout(() => {
-                // 显示结果
-                document.getElementById("results-section").style.display =
-                  "block";
-
-                // 滚动到结果区域
-                document.getElementById("results-section").scrollIntoView({
-                  behavior: "smooth",
-                });
-
-                // 恢复按钮状态
-                btn.innerHTML = originalHTML;
-                btn.disabled = false;
-              }, 1500);
-            } else {
-              alert("请输入抽卡记录链接");
-            }
-          });
-
-        // 选项卡切换功能
-        const tabs = document.querySelectorAll(".tab");
-        tabs.forEach((tab) => {
-          tab.addEventListener("click", function () {
-            // 移除所有tab的active类
-            tabs.forEach((t) => t.classList.remove("active"));
-
-            // 添加当前tab的active类
-            this.classList.add("active");
-
-            // 获取目标tab内容
-            const tabName = this.getAttribute("data-tab");
-
-            // 显示/隐藏卡片内容
-            const cards = document.querySelectorAll(".card");
-            cards.forEach((card) => {
-              const cardTab = card.getAttribute("data-tab-content");
-              if (tabName === "summary" || !cardTab) {
-                card.style.display = "block";
-              } else if (cardTab === tabName) {
-                card.style.display = "block";
-              } else {
-                card.style.display = "none";
-              }
-            });
-          });
-        });
-      });
-    </script>
-  </body>
-</html>
+import turtle
+import math
+
+# 初始化画笔
+t = turtle.Turtle()
+screen = turtle.Screen()
+screen.setup(width=800, height=800)
+screen.bgcolor("#f0f8ff")  # 浅蓝背景，突出水晶感
+t.speed(0)  # 最快绘制速度
+t.hideturtle()  # 隐藏画笔
+
+# 定义水晶玫瑰的渐变颜色（从浅粉到透明，模拟水晶通透感）
+def get_crystal_color(alpha):
+    # alpha 控制透明度（0-1），值越小越透明
+    r = int(255 * (0.8 + 0.2 * alpha))  # 红色通道
+    g = int(255 * (0.3 + 0.2 * alpha))  # 绿色通道
+    b = int(255 * (0.5 + 0.2 * alpha))  # 蓝色通道
+    return f"#{r:02x}{g:02x}{b:02x}"
+
+# 绘制水晶花瓣（带弧度和渐变）
+def draw_crystal_petal(x, y, angle, size, alpha):
+    t.penup()
+    t.goto(x, y)
+    t.setheading(angle)
+    t.pendown()
+    t.color(get_crystal_color(alpha))
+    t.begin_fill()
+    # 花瓣弧度（用圆的一部分模拟）
+    for _ in range(2):
+        t.circle(size, 120)
+        t.left(60)
+    t.end_fill()
+
+# 绘制花芯（深一点的水晶色）
+def draw_center(x, y, size):
+    t.penup()
+    t.goto(x, y)
+    t.setheading(0)
+    t.color("#ff69b4")  # 深粉，突出花芯
+    t.begin_fill()
+    t.circle(size)
+    t.end_fill()
+
+# 绘制水晶花茎（带渐变的绿色）
+def draw_stem(x, y, height):
+    t.penup()
+    t.goto(x, y)
+    t.setheading(270)
+    t.pensize(6)
+    # 茎的渐变：从深绿到浅绿
+    for i in range(height):
+        green = int(34 + (139 - 34) * (i / height))  # 34（深绿）到139（浅绿）
+        t.color(f"#00{green:02x}00")
+        t.pendown()
+        t.forward(1)
+        t.penup()
+    t.pensize(1)
+
+# 绘制水晶叶子（半透明绿色）
+def draw_leaf(x, y, angle, size):
+    t.penup()
+    t.goto(x, y)
+    t.setheading(angle)
+    t.color("#00cc66")  # 浅绿，模拟水晶叶子
+    t.begin_fill()
+    for _ in range(2):
+        t.circle(size, 100)
+        t.left(80)
+    t.end_fill()
+
+# 组装水晶玫瑰
+def draw_crystal_rose(x, y):
+    # 1. 绘制花芯
+    draw_center(x, y + 20, 8)
+    
+    # 2. 绘制外层水晶花瓣（透明度从0.6到0.9，层次感）
+    petal_angles = [0, 60, 120, 180, 240, 300]  # 六个方向的花瓣
+    for angle in petal_angles:
+        draw_crystal_petal(x, y, angle, 25, 0.6)  # 外层花瓣（较透明）
+        draw_crystal_petal(x, y + 5, angle + 30, 18, 0.9)  # 内层花瓣（较实）
+    
+    # 3. 绘制花茎
+    draw_stem(x, y - 30, 150)
+    
+    # 4. 绘制叶子
+    draw_leaf(x, y - 60, 135, 15)  # 左侧叶子
+    draw_leaf(x, y - 90, 225, 18)  # 右侧叶子
+
+# 绘制主玫瑰（中心位置）
+draw_crystal_rose(0, 50)
+
+# 保持窗口显示
+turtle.done()
